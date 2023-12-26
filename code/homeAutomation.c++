@@ -8,7 +8,12 @@ const String CHANNEL_FEED_URI_1 = "/update?api_key=" + THINGSPEAK_API_KEY + "&fi
 const String CHANNEL_FEED_URI_2 = "/update?api_key=" + THINGSPEAK_API_KEY + "&field2=";
 const String CHANNEL_FEED_URI_3 = "/update?api_key=" + THINGSPEAK_API_KEY + "&field3=";
 const String CHANNEL_FEED_URI_4 = "/update?api_key=" + THINGSPEAK_API_KEY + "&field4=";
-int Room_Occupied;
+
+// Initialize ESP8266 for internet connectivity.
+String ssid = "Simulator Wifi"; // Tinkercad uses this SSID
+String password = ""; // Password is not needed.
+String host = "api.thingspeak.com";
+
 
 Servo motor1;
 Servo motor2;
@@ -16,11 +21,6 @@ int pos = 0;
 int pir = A4;
 LiquidCrystal lcd(2,4,7,8,12,13);
 
-
-// Initialize ESP8266 for internet connectivity.
-String ssid = "Simulator Wifi"; // Tinkercad uses this SSID
-String password = ""; // Password is not needed.
-String host = "api.thingspeak.com";
 
 const int trigpin = 10;
 const int echopin = 9;
@@ -44,44 +44,28 @@ byte automatic[] = {
   B00000
 };
 
-//int button1 = 3;
-//int button2 = 5;
-//int button3 = 6;
-//int button4 = 11;
-
 double distancecm;
 double duration;
-double distanceinch;
 float temp_reading;
 float temp;
 float temp_final;
 int i;
+int Room_Occupied;
 
 
-/*
- * Function:  bootstrapESP8266 
- * --------------------
- * Setup ESP2866 by starting a serial connection.
- * Then use the simulator SSID and password to connect to the WiFi.
- * Establish a TCP connection with ThingSpeak over HTTP.
- * This function fast-fails if any of the above steps does not result in success.
- */
 int bootstrapESP8266(void) {
-  // Initialize ESP2866 and serial connection.
+
   Serial.begin(115200);
   Serial.println("AT");
   delay(10);
     
   if (!Serial.find("OK")) return 1;  
-  
-  // Connect to the internet (router) using SSID and Password.
-  // If successful, returns an OK message.
+
   Serial.println("AT+CWJAP=\"" + ssid + "\",\"" + password + "\"");
   delay(10);
   
   if (!Serial.find("OK")) return 2;
 
-  // Connects to the host server (ThingSpeak) as a TCP Client.
   Serial.println("AT+CIPSTART=\"TCP\",\"" + host + "\"," + HTTP_PORT);
 }
 
@@ -114,12 +98,12 @@ void loop()
   Serial.println("Gas Sensor Value "+String(gasSensorValue));
   Serial.println("Temperature Sensor Value "+String(tempSensorValue));
   Serial.println("Photo Sensor Value "+String(photoSensorValue));
-// Construct HTTP call.
+
   String httpPacket_1 = "GET "+CHANNEL_FEED_URI_1 + String(gasSensorValue) +
                     "&" + CHANNEL_FEED_URI_2 + String(tempSensorValue) +
                     "&" + CHANNEL_FEED_URI_3 + String(photoSensorValue) + "&" + CHANNEL_FEED_URI_4 + String(Room_Occupied) + " HTTP/1.1\r\nHost: " + host + "\r\n\r\n";
   int packetLength_1 = httpPacket_1.length();
-  // Send the data to the server. Also send the packet length.
+
   Serial.print("AT+CIPSEND=");
   Serial.println(packetLength_1);
   delay(100);
@@ -137,10 +121,7 @@ void loop()
   digitalWrite(trigpin,LOW);
   duration = pulseIn(echopin,HIGH);
   distancecm = (duration*0.034)/2;
-  distanceinch = (duration*0.0133)/2;
- //Serial.print("Distance in cm =");
- //Serial.println(distancecm);
-  
+
   if(distancecm >305){
   Serial.println("Room is Free!");
     Room_Occupied = 0;
@@ -153,17 +134,9 @@ void loop()
   temp_reading = analogRead(temp_sensor);
   temp = (temp_reading/1023)*5000;
   temp_final = (temp - 500)/10;
- //Serial.print("Temperature : ");
- //Serial.println(temp_final);
- //Serial.print("Sensor : ");
- //Serial.println(analog_sensor);
   
 
   int photo = analogRead(photo_resistor);
- // Serial.println(photo);
-  
- // analogWrite(A4,255);
- // analogWrite(fan2,64);
   
   
   if(photo <= 425 & distancecm <= 305 & analog_sensor < 180)
@@ -360,19 +333,6 @@ void loop()
     delay(400);
   }
  
- 
- /* if(analog_sensor > 180)
-  {
-     lcd.clear();
-    analogWrite(fan1,255);
-    analogWrite(fan2,255);
-    analogWrite(bulb1,255);
-    analogWrite(bulb2,255);
-    lcd.setCursor(0,0);
-    lcd.print("Danger....");
-    motoropen();
-   // delay(400);
-  }*/
    int pirvalue = digitalRead(pir);
   if(pirvalue == HIGH)
   {
